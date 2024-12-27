@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>NhaTrang3d1</title>
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<base target="_blank">
+<link rel="stylesheet" type="text/css" href="./Qgis2threejs.css">
+<style type="text/css">
+#popup, #header, #layerpanel {
+  left: 36px;
+}
+#imageDisplay {
+  margin-top: 10px;
+}
+.button {
+  padding: 10px;
+  margin: 5px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;  /* Make text bold for better visibility */
+}
+#ponagarBtn { background-color: yellow; color: black; } /* Yellow for Ponagar Tower */
+#longSonBtn { background-color: red; color: white; } /* Red for Long Son Pagoda */
+#monkeyIslandBtn { background-color: #ADD8E6; color: black; } /* Lighter blue for Monkey Island */
+#tramHuongBtn { background-color: #00FF00; color: black; } /* Bright green for Tram Huong Tower */
+#vinpearlBtn { background-color: #FF00AD; color: black; } /* Bright pink for Vinpearl Land */
+#oceanographyBtn { background-color: orange; color: black; } /* Orange for Oceanography Institute */
+#mountainChurchBtn { background-color: black; color: white; } /* Black for Mountain Church */
+#theaterBtn { background-color: darkblue; color: white; } /* Dark blue for Do Theater */
+#nghiaSonBtn { background-color: #8B4513; color: white; } /* SaddleBrown for Nghia Son Pagoda */
+#tueVienBtn { background-color: #03D2AB; color: black; } /* Teal for Tue Vien Pagoda */
+</style>
+<script src="./threejs/three.min.js"></script>
+<script src="./threejs/OrbitControls.js"></script>
+<script src="./threejs/ViewHelper.js"></script>
+<script src="./tweenjs/tween.js"></script>
+<script src="./Qgis2threejs.js"></script>
+</head>
+<body>
+<div id="view">
+  <div id="northarrow"></div>
+  <div id="navigation"></div>
+</div>
+
+<!-- popup -->
+<div id="popup">
+  <div id="closebtn">&times;</div>
+  <div id="popupbar"></div>
+  <div id="popupbody">
+    <div id="popupcontent"></div>
+
+    <!-- query result -->
+    <div id="queryresult">
+      <table id="qr_coords_table">
+        <caption>Clicked coordinates <div id="zoomtopoint" class="action-zoom zoombtn"></div></caption>
+        <tr><td id="qr_coords"></td></tr>
+      </table>
+
+      <table id="qr_layername_table">
+        <caption>Layer <div id="zoomtolayer" class="action-zoom zoombtn"></div></caption>
+        <tr><td id="qr_layername"></td></tr>
+      </table>
+
+      <table id="qr_attrs_table">
+        <caption>Attributes</caption>
+      </table>
+
+      <!-- camera actions and measure tool -->
+      <div id="orbitbtn" class="action-btn action-orbit">Orbit</div>
+      <div id="measurebtn" class="action-btn">Measure distance</div>
+    </div>
+
+    <!-- page info -->
+    <div id="pageinfo">
+      <h1>Current View URL</h1>
+      <div><input id="urlbox" type="text"></div>
+
+      <h1>Nha Trang City</h1>
+      <table id="usage">
+        <tr>
+          <td>Nha Trang Tourist board</td>
+          <img src="data:image/jpeg;base64,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">
+        </tr>
+      </table>
+
+      <h1>Top 10 Tourist Spots</h1>
+      <button id="ponagarBtn" class="button">Ponagar Temple</button>
+      <button id="longSonBtn" class="button">Long Son Pagoda</button>
+      <button id="monkeyIslandBtn" class="button">Monkey Island</button>
+      <button id="tramHuongBtn" class="button">Tram Huong Tower</button>
+      <button id="vinpearlBtn" class="button">Vinpearl Land</button>
+      <button id="oceanographyBtn" class="button">Nha Trang Institute of Oceanography</button>
+      <button id="mountainChurchBtn" class="button">Nha Trang Mountain Church</button>
+      <button id="theaterBtn" class="button">Do theater</button>
+      <button id="nghiaSonBtn" class="button">Nghia Son Pagoda</button>
+      <button id="tueVienBtn" class="button">Tue Vien Pagoda</button>
+      <div id="imageDisplay"></div>
+    </div>
+  </div>
+</div>
+
+<!-- progress bar -->
+<div id="progress"><div id="progressbar"></div></div>
+
+<!-- menu -->
+<div id="toolbtns">
+  <div id="layerbtn"></div>
+  <div id="animbtn" class="hidden"></div>
+  <div id="infobtn"></div>
+</div>
+
+<!-- header and footer -->
+<div id="header"></div>
+<div id="footer"></div>
+
+<!-- layer panel -->
+<div id="layerpanel">
+  <div id="layerlist"></div>
+</div>
+
+<!-- animation -->
+<div id="narrativebox" class="ef1">
+  <div id="narbody"></div>
+  <div id="nextbtn"></div>
+</div>
+
+<script>
+Q3D.Config.allVisible = true;
+Q3D.Config.localMode = true;
+Q3D.Config.animation.enabled = true;
+Q3D.Config.animation.startOnLoad = true;
+
+var container = document.getElementById("view"),
+    app = Q3D.application,
+    gui = Q3D.gui;
+
+app.init(container);       // initialize viewer
+
+// load the scene
+app.loadSceneFile("./data/index/scene.js", function (scene) {
+  app.start();
+}, function (scene) {});
+
+// Function to display information about Tháp Ponagar
+document.getElementById('ponagarBtn').onclick = function() {
+  const ponagarCoords = "Coordinates: (12.2453, 109.1934)";
+  const ponagarImage = "<img src='https://ik.imagekit.io/tvlk/blog/2022/07/thap-ba-Ponagar-1.jpg?tr=c-at_max' alt='Tháp Ponagar' style='width:100%; max-width:300px;'>";
+  const ponagarAddress = "<p>Address: Hai Thang Tu Street, Vinh Phuoc, Nha Trang<br>The Ponagar Temple, also known as Po Nagar Cham Towers, is a remarkable architectural and cultural landmark located in Nha Trang, Vietnam. Built by the Cham civilization between the 7th and 12th centuries, the temple is dedicated to the goddess Po Nagar, who is revered as the mother of the kingdom and a symbol of fertility, prosperity, and protection.</p>"; // Address text
+  
+  
+  document.getElementById('qr_coords').innerText = ponagarCoords;
+  document.getElementById('imageDisplay').innerHTML = ponagarImage + ponagarAddress; // Add address below image
+  console.log("Navigating to Tháp Ponagar...");
+};
+
+// Function to display information about Long Son Pagoda
+document.getElementById('longSonBtn').onclick = function() {
+  const longSonCoords = "Coordinates: (12.2270, 109.2070)";
+  const longSonImage = "<img src='https://static.vinwonders.com/production/Long-Son-Pagoda-5-1.jpg' alt='Long Son Pagoda' style='width:100%; max-width:300px;'>";
+  const longSonAddress = "<p>Address: 23 Thang 10 Street, Phuong Son, Nha Trang</p>"; // Address text
+  
+  document.getElementById('qr_coords').innerText = longSonCoords;
+  document.getElementById('imageDisplay').innerHTML = longSonImage + longSonAddress; // Add address below image
+  console.log("Navigating to Long Son Pagoda...");
+};
+
+// Function to display information about Monkey Island
+document.getElementById('monkeyIslandBtn').onclick = function() {
+  const coords = "Coordinates: (12.2840, 109.2870)";
+  const image = "<img src='https://mia.vn/media/uploads/blog-du-lich/dao-khi-can-gio-5-1693145510.jpg' alt='Monkey Island' style='width:100%; max-width:300px;'>";
+  const address = "<p>Address: Hoa Lan, Ninh Phu</p>"; // Address text
+  
+  document.getElementById('qr_coords').innerText = coords;
+  document.getElementById('imageDisplay').innerHTML = image + address; // Add address below image
+  console.log("Navigating to Monkey Island...");
+};
+
+// Function to display information about Tram Huong Tower
+document.getElementById('tramHuongBtn').onclick = function() {
+  const coords = "Coordinates: (12.2214, 109.2156)";
+  const image = "<img src='https://statics.vinwonders.com/Tram-Huong-Tower-2_1694976755.jpg' style='width:100%; max-width:300px;'>";
+  const address = "<p>Address: Tran Phu Square, Loc Tho, Nha Trang</p>"; // Address text
+  
+  document.getElementById('qr_coords').innerText = coords;
+  document.getElementById('imageDisplay').innerHTML = image + address; // Add address below image
+  console.log("Navigating to Tram Huong Tower...");
+};
+
+// Function to display information about Vinpearl Land
+document.getElementById('vinpearlBtn').onclick = function() {
+  const coords = "Coordinates: (12.2276, 109.2032)";
+  const image = "<img src='https://static.vinwonders.com/2022/04/kinh-nghiem-di-vinpearl-nha-trang-1-1.jpg' style='width:100%; max-width:300px;'>";
+  const address = "<p>Address: Tran Phu Street, Loc Tho, Nha Trang</p>"; // Address text
+  
+  document.getElementById('qr_coords').innerText = coords;
+  document.getElementById('imageDisplay').innerHTML = image + address; // Add address below image
+  console.log("Navigating to Vinpearl Land...");
+};
+
+// Function to display information about Nha Trang Institute of Oceanography
+document.getElementById('oceanographyBtn').onclick = function() {
+  const coords = "Coordinates: (12.2570, 109.2071)";
+  const image = "<img src='https://ik.imagekit.io/tvlk/blog/2022/12/vien-hai-duong-hoc-nha-trang-cover.jpg?tr=c-at_max' style='width:100%; max-width:300px;'>";
+  const address = "<p>Address: 01 Stone Bridge, Nha Trang</p>"; // Address text
+  
+  document.getElementById('qr_coords').innerText = coords;
+  document.getElementById('imageDisplay').innerHTML = image + address; // Add address below image
+  console.log("Navigating to Nha Trang Institute of Oceanography...");
+};
+
+// Function to display information about Nha Trang Mountain Church
+document.getElementById('mountainChurchBtn').onclick = function() {
+  const coords = "Coordinates: (12.2324, 109.2147)";
+  const image = "<img src='https://static.vinwonders.com/2022/07/Nha-Trang-Cathedral-1.jpg' style='width:100%; max-width:300px;'>";
+  const address = "<p>Address: Thai Nguyen Street, Phuoc Tan, Nha Trang</p>"; // Address text
+  
+  document.getElementById('qr_coords').innerText = coords;
+  document.getElementById('imageDisplay').innerHTML = image + address; // Add address below image
+  console.log("Navigating to Nha Trang Mountain Church...");
+};
+
+// Function to display information about Do Theater
+document.getElementById('theaterBtn').onclick = function() {
+  const coords = "Coordinates: (12.2388, 109.2190)";
+  const image = "<img src='https://statics.vinwonders.com/nha-hat-do-nha-trang-1_1694799169.jpg' alt='Do Theater' style='width:100%; max-width:300px;'>";
+  const address = "<p>Address: Pham Van Dong street, Vinh Hai, Nha Trang</p>"; // Address text
+  
+  document.getElementById('qr_coords').innerText = coords;
+  document.getElementById('imageDisplay').innerHTML = image + address; // Add address below image
+  console.log("Navigating to Do Theater...");
+};
+
+// Function to display information about Nghia Son Pagoda
+document.getElementById('nghiaSonBtn').onclick = function() {
+  const coords = "Coordinates: (12.2242, 109.2075)";
+  const image = "<img src='https://static.vinwonders.com/2022/05/chua-nghia-son-nha-trang-1.jpg' alt='Nghia Son Pagoda' style='width:100%; max-width:300px;'>";
+  const address = "<p>Address: Phuoc Son village, Nha Trang</p>"; // Address text
+  
+  document.getElementById('qr_coords').innerText = coords;
+  document.getElementById('imageDisplay').innerHTML = image + address; // Add address below image
+  console.log("Navigating to Nghia Son Pagoda...");
+};
+
+// Function to display information about Tue Vien Pagoda
+document.getElementById('tueVienBtn').onclick = function() {
+  const coords = "Coordinates: (12.2278, 109.2178)";
+  const image = "<img src='https://thienvientuequang.vn/wp-content/uploads/2021/10/227084539_968971090611373_2930528597496519309_n-1024x621.jpg' alt='Tue Vien Pagoda' style='width:100%; max-width:300px;'>";
+  const address = "<p>Address: Cat Loi Village, Nha Trang</p>"; // Address text
+  
+  document.getElementById('qr_coords').innerText = coords;
+  document.getElementById('imageDisplay').innerHTML = image + address; // Add address below image
+  console.log("Navigating to Tue Vien Pagoda...");
+};
+</script>
+</body>
+</html>
+
